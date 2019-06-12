@@ -1,6 +1,7 @@
 from random import randint
 from math import sqrt
 from pyg import * # pylint: disable=import-error
+## Pour installer pyg, voir http://pyg.gred.in/
 
 DIST_SECURITE = 10
 
