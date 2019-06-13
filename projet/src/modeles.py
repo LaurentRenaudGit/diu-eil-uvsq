@@ -2,6 +2,8 @@ from random import randint
 from math import sqrt, ceil
 from sys import maxsize
 
+GRIDSIZE = 30
+
 class Vecteur:
     def __init__(self, x, y):
         self.x = x
@@ -32,6 +34,9 @@ class Vecteur:
     def __str__(self):
         return f"({self.x},{self.y})"
 
+    def to_int(self):
+        return [ int(self.x), int(self.y) ]
+
 class Obstacle:
     def __init__(self,
                  debut=Vecteur(0, 0),
@@ -47,12 +52,15 @@ class Obstacle:
         return self.position
 
     def getPositionGrille(self):
-        i = int(self.position.x/30)
-        j = int(self.position.y/30)
+        i = int(self.position.x/GRIDSIZE)
+        j = int(self.position.y/GRIDSIZE)
         return i,j
 
     def distance(self, obstacle):
-        return (self.position  - obstacle.position).norme()
+        dx = self.position.x -obstacle.position.x
+        dy = self.position.y -obstacle.position.y
+        return sqrt( dx*dx + dy*dy )
+        #return (self.position  - obstacle.position).norme()-3
 
 
 class Voyageur(Obstacle):
@@ -61,14 +69,14 @@ class Voyageur(Obstacle):
                  destination=Vecteur(0, 0),
                  taille_pas=10.0):
 
-        super().__init__(debut, rayon=5)
+        super().__init__(debut, rayon=10)
 
         self.trajet = [ debut ]
         self.destination = destination
         self.next = debut
         self.taille_pas = taille_pas
 
-    def observation(self, carte, voyageurs = None, obstacles = None, objectif = None):
+    def observation(self, carte, voyageurs = None, obstacles = None, objectif = None, cout_objectif = 0):
         ## S'il n'y a pas d'objectif, aller vers la destination
         if objectif==None:
             destination = self.destination 
@@ -84,17 +92,20 @@ class Voyageur(Obstacle):
         # Liste des voyageurs proches
         liste = [ voyageur
                     for voyageur in voyageurs
-                    if ( voyageur!=self and self.distance(voyageur) < voyageur.rayon + self.rayon +self.taille_pas ) ]
+                    if ( (voyageur!=self) 
+                         and (self.distance(voyageur) < voyageur.rayon + self.rayon + self.taille_pas) ) ]
+
+        liste_devant = [ voyageur 
+                    for voyageur in liste if (voyageur.position-destination).norme()<reste ]
+
 
         liste_obstacles = [ obstacle
                     for obstacle in obstacles
                     if ( self.distance(obstacle) < obstacle.rayon + self.rayon + self.taille_pas ) ]
 
-        liste_devant = [ voyageur 
-                    for voyageur in liste if (voyageur.position-destination).norme()<reste]
-
         liste_obstacles_devant = [ obstacle 
                     for obstacle in liste_obstacles if (obstacle.position-destination).norme()<reste]
+
 
         t_liste_devant = len(liste_devant)
         t_liste_obstacles_devant = len(liste_obstacles_devant)
@@ -105,30 +116,41 @@ class Voyageur(Obstacle):
             ## Aucun voyageur proche devant, on fait le deplacement optimal
             if (reste>self.taille_pas):
                 pas = direction.normalise() * self.taille_pas
+                # pas = Vecteur( direction.x * self.taille_pas / reste, direction.y * self.taille_pas / reste)
                 self.next = self.position + pas
             else:
                 self.next = destination
         else:
             ## Du monde devant
-            if objectif==None:
-                i,j = self.getPositionGrille()
+            #if objectif==None:
+            i,j = self.getPositionGrille()
 
-                ## On regarde les cases autour
-                valeurs = []
-                for colonne in range(i-1, i+2):
-                    for ligne in range(j-1, j+2):
-                        valeurs.append( (colonne, ligne, carte.nb_voyageurs(colonne, ligne)) )
+            ## On regarde les cases autour
+            valeurs = []
+            for colonne in range(i-1, i+2):
+                for ligne in range(j-1, j+2):
+                    centre_case = Vecteur( colonne*GRIDSIZE + GRIDSIZE/2, ligne*GRIDSIZE + GRIDSIZE/2 )
+                    distance_case = (self.destination - centre_case).norme()
 
-                ## Recherche de la case la moins peuplée
-                colonne_min, ligne_min, nb_min = min(valeurs, key=lambda x: x[2])
+                    ## Cout case = nb de voyageurs dans la case + poids relatif à la distance
+                    cout = carte.nb_voyageurs(colonne, ligne) + distance_case/800
 
-                objectif = Vecteur( colonne_min*30 + 15, ligne_min*30 + 15 )
+                    #print(cout, cout_objectif, cout<cout_objectif)
+                    if cout<=cout_objectif:
+                        cout = maxsize
 
-                self.observation(carte, voyageurs, obstacles, objectif)
+                    valeurs.append( (colonne, ligne, cout ) )
 
+            #print(cout_objectif, valeurs)
+
+            ## Recherche de la case ayant le cout le plus bas
+            colonne_min, ligne_min, cout_min = min(valeurs, key=lambda x: x[2])
+
+            if cout_min<maxsize:
+                objectif = Vecteur( colonne_min*GRIDSIZE + GRIDSIZE/2, ligne_min*GRIDSIZE + GRIDSIZE/2 )
+                self.observation(carte, voyageurs, obstacles, objectif, cout_min)
             else:
                 self.next = self.position
-
         #elif t_liste>=2:
         #    ## Trop de monde, on attend
         #    self.next = self.position
@@ -145,6 +167,9 @@ class Voyageur(Obstacle):
     def arrive(self):
         return self.position == self.destination
 
+    def getTrajet(self):
+        return self.trajet
+
     def __str__(self):
         return f"{self.position} => {self.destination}"
 
@@ -159,7 +184,11 @@ class Carte:
         self.h = ty
 
         #fenetre(tx+100, ty+100, "Flux")
-        #affiche_auto_off()
+        self.obstacles.append( Obstacle( Vecteur(tx/2, ty/2), 30) )
+        self.obstacles.append( Obstacle( Vecteur(tx/6, ty/6), 30) )
+        self.obstacles.append( Obstacle( Vecteur(5*tx/6, ty/6), 30) )
+        self.obstacles.append( Obstacle( Vecteur(tx/6, 5*ty/6), 30) )
+        self.obstacles.append( Obstacle( Vecteur(5*tx/6, 5*ty/6), 30) )
 
         for i in range(self.nb):
 
@@ -183,29 +212,20 @@ class Carte:
             while compteur!=0:
                 compteur = 0
                 for j in range(i):
-                    if (voyageur.distance(self.voyageurs[j]) ) < 2*voyageur.rayon :
+                    if voyageur.distance(self.voyageurs[j]) < 2*voyageur.rayon :
+                        compteur = 1
+                        voyageur.setPosition( Vecteur(randint(0, tx-1), randint(0, ty-1)) )
+                        break
+
+                for obstacle in self.obstacles:
+                    if voyageur.distance( obstacle ) < voyageur.rayon + obstacle.rayon :
                         compteur = 1
                         voyageur.setPosition( Vecteur(randint(0, tx-1), randint(0, ty-1)) )
                         break
 
             self.voyageurs.append(voyageur)
-
-        self.obstacles.append( Obstacle( Vecteur(tx/2, ty/2), 10) )
-
+        
         self.compter_voyageurs()
-
-#    def draw(self):
-#        """Dessin de la carte et des voyageurs"""
-#        A = POINT(50, 50)
-#        B = POINT(50+self.w, 50+self.h)
-#
-#        remplir_ecran(noir)
-#        rectangle_plein(A, B, blanc)
-#
-#        for i in range(self.nb):
-#            self.voyageurs[i].draw()
-#
-#        affiche_tout()
 
     def taille(self):
         """Renvoie la taille de la carte"""
@@ -233,8 +253,8 @@ class Carte:
         self.compter_voyageurs()
 
     def compter_voyageurs(self):
-        nb_colonnes = ceil(self.w / 30)
-        nb_lignes = ceil(self.h / 30)
+        nb_colonnes = ceil(self.w / GRIDSIZE)
+        nb_lignes = ceil(self.h / GRIDSIZE)
         #print(nb_colonnes, nb_lignes)
         self.grille_nb_voyageurs = [ [ 0 ]*nb_lignes for i in range(nb_colonnes) ]
 
@@ -252,8 +272,8 @@ class Carte:
     def nb_voyageurs(self, i, j):
         """Renvoie le nombre de voyageurs dans la case (i,j) de la carte.
         Une case représéente un carré de 3x3 mètres = 30x30 px"""
-        nb_colonnes = ceil(self.w / 30)
-        nb_lignes = ceil(self.h / 30)
+        nb_colonnes = ceil(self.w / GRIDSIZE)
+        nb_lignes = ceil(self.h / GRIDSIZE)
 
         ## Si (i,j) est en dehors de la grille, on renvoie maxsize
         if i<0 or i>=nb_colonnes or j<0 or j>=nb_lignes:
