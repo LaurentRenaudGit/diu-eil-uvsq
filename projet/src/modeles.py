@@ -1,9 +1,6 @@
 from random import randint
 from math import sqrt, ceil
 from sys import maxsize
-## from pyg import *
-
-DIST_SECURITE = 10
 
 class Vecteur:
     def __init__(self, x, y):
@@ -35,19 +32,13 @@ class Vecteur:
     def __str__(self):
         return f"({self.x},{self.y})"
 
-class Voyageur:
+class Obstacle:
     def __init__(self,
                  debut=Vecteur(0, 0),
-                 destination=Vecteur(0, 0),
-                 dist_vision=10,
-                 taille_pas=10.0):
+                 rayon=5):
 
         self.position = debut
-        self.trajet = [ debut ]
-        self.destination = destination
-        self.next = debut
-        self.dist_vision = dist_vision
-        self.taille_pas = taille_pas
+        self.rayon = rayon
 
     def setPosition(self, vecteur):
         self.position = vecteur
@@ -60,9 +51,22 @@ class Voyageur:
         j = int(self.position.y/30)
         return i,j
 
+    def distance(self, obstacle):
+        return (self.position  - obstacle.position).norme()
 
-    def distance(self, voyageur):
-        return (self.position  - voyageur.position).norme()
+
+class Voyageur(Obstacle):
+    def __init__(self,
+                 debut=Vecteur(0, 0),
+                 destination=Vecteur(0, 0),
+                 taille_pas=10.0):
+
+        super().__init__(debut, rayon=5)
+
+        self.trajet = [ debut ]
+        self.destination = destination
+        self.next = debut
+        self.taille_pas = taille_pas
 
     def observation(self, carte, voyageurs = None, obstacles = None, objectif = None):
         ## S'il n'y a pas d'objectif, aller vers la destination
@@ -80,16 +84,24 @@ class Voyageur:
         # Liste des voyageurs proches
         liste = [ voyageur
                     for voyageur in voyageurs
-                    if ( voyageur!=self and self.distance(voyageur) < DIST_SECURITE+self.taille_pas ) ]
+                    if ( voyageur!=self and self.distance(voyageur) < voyageur.rayon + self.rayon +self.taille_pas ) ]
+
+        liste_obstacles = [ obstacle
+                    for obstacle in obstacles
+                    if ( self.distance(obstacle) < obstacle.rayon + self.rayon + self.taille_pas ) ]
 
         liste_devant = [ voyageur 
                     for voyageur in liste if (voyageur.position-destination).norme()<reste]
 
+        liste_obstacles_devant = [ obstacle 
+                    for obstacle in liste_obstacles if (obstacle.position-destination).norme()<reste]
+
         t_liste_devant = len(liste_devant)
-        t_liste = len(liste)
+        t_liste_obstacles_devant = len(liste_obstacles_devant)
+        # t_liste = len(liste)
 
         # Prochaine position
-        if t_liste_devant==0:
+        if t_liste_devant==0 and t_liste_obstacles_devant==0:
             ## Aucun voyageur proche devant, on fait le deplacement optimal
             if (reste>self.taille_pas):
                 pas = direction.normalise() * self.taille_pas
@@ -130,25 +142,18 @@ class Voyageur:
         self.position = self.next
         self.trajet.append(self.position)
 
-    def draw(self):
-        if not self.arrive():
-            P = POINT(self.position.x+50, self.position.y+50)
-            cercle_plein(P, DIST_SECURITE/2, rouge)
-
     def arrive(self):
         return self.position == self.destination
 
     def __str__(self):
         return f"{self.position} => {self.destination}"
 
-class Obstacles:
-    pass
-
 class Carte:
     def __init__(self, tx=400, ty=400, nb=100):
         """Création d'une carte réctangulaire de taille tx * ty, avec nb voyageurs"""
         self.voyageurs = []
         self.voyageurs_arrives = []
+        self.obstacles = []
         self.nb = nb
         self.w = tx
         self.h = ty
@@ -178,12 +183,14 @@ class Carte:
             while compteur!=0:
                 compteur = 0
                 for j in range(i):
-                    if (voyageur.distance(self.voyageurs[j]) ) < DIST_SECURITE :
+                    if (voyageur.distance(self.voyageurs[j]) ) < 2*voyageur.rayon :
                         compteur = 1
                         voyageur.setPosition( Vecteur(randint(0, tx-1), randint(0, ty-1)) )
                         break
 
             self.voyageurs.append(voyageur)
+
+        self.obstacles.append( Obstacle( Vecteur(tx/2, ty/2), 10) )
 
         self.compter_voyageurs()
 
@@ -208,9 +215,13 @@ class Carte:
         """Renvoie les deux listes des voyageurs"""
         return self.voyageurs, self.voyageurs_arrives
 
+    def liste_obstacles(self):
+        """Renvoie les deux listes des voyageurs"""
+        return self.obstacles
+
     def step(self):
         for v in self.voyageurs:
-            v.observation(self, self.voyageurs)
+            v.observation(self, self.voyageurs, self.obstacles)
             v.deplacement()
         
         ## Enlever les voyageurs arrivés à destination
