@@ -7,6 +7,7 @@ BLUE = (0,0,255)
 RED = (255,0,0)
 WHITE = (255,255,255)
 GREEN = (0,255,0)
+YELLOW = (255,255,0)
 
 class Vecteur:
     def __init__(self, x, y):
@@ -32,9 +33,6 @@ class Vecteur:
         n = self.norme()
         return Vecteur(self.x/n, self.y/n)
 
-    def tourne(self):
-        return Vecteur(self.y, self.x)
-
     def __str__(self):
         return f"({self.x},{self.y})"
 
@@ -44,10 +42,12 @@ class Vecteur:
 class Obstacle:
     def __init__(self,
                  debut=Vecteur(0, 0),
-                 rayon=5):
+                 rayon=5,
+                 couleur=YELLOW):
 
         self.position = debut
         self.rayon = rayon
+        self.couleur = couleur
 
     def setPosition(self, vecteur):
         self.position = vecteur
@@ -61,10 +61,7 @@ class Obstacle:
         return i,j
 
     def distance(self, obstacle):
-        dx = self.position.x -obstacle.position.x
-        dy = self.position.y -obstacle.position.y
-        return sqrt( dx*dx + dy*dy )
-        #return (self.position  - obstacle.position).norme()-3
+        return (self.position  - obstacle.position).norme()-3
 
 
 class Voyageur(Obstacle):
@@ -74,13 +71,12 @@ class Voyageur(Obstacle):
                  taille_pas=10.0,
                  couleur=BLUE):
 
-        super().__init__(debut, rayon=10)
+        super().__init__(debut, rayon=10, couleur=couleur)
 
         self.trajet = [ debut ]
         self.destination = destination
         self.next = debut
         self.taille_pas = taille_pas
-        self.couleur = couleur
 
     def observation(self, carte, voyageurs = None, obstacles = None, objectif = None, cout_objectif = 0):
         ## S'il n'y a pas d'objectif, aller vers la destination
@@ -99,63 +95,48 @@ class Voyageur(Obstacle):
         if (reste>self.taille_pas):
             pas = direction.normalise() * self.taille_pas
             # pas = Vecteur( direction.x * self.taille_pas / reste, direction.y * self.taille_pas / reste)
-            self.next = self.position + pas
+            cible = self.position + pas
         else:
-            self.next = destination
+            cible = destination
         
-        # Liste des voyageurs proches
-        liste = [ voyageur
-                    for voyageur in voyageurs
-                    if ( (voyageur!=self) 
-                         and (self.distance(voyageur) < voyageur.rayon + self.rayon + self.taille_pas) ) ]
+        # Nombre des voyageurs trop proches
+        nb_voyageurs_proches = len( [ voyageur 
+                for voyageur in voyageurs
+                if ( voyageur!=self
+                     and self.distance(voyageur) < voyageur.rayon + self.rayon + self.taille_pas 
+                     and (cible - voyageur.position).norme() < self.rayon + voyageur.rayon) ] )
 
-        liste_devant = [ voyageur 
-                    for voyageur in liste if ((self.next - voyageur.position).norme() < self.rayon + voyageur.rayon) ]
+        # Nombre des obstacles trop proches
+        nb_obstacles_proches = len( [ obstacle
+                for obstacle in obstacles
+                if ( self.distance(obstacle) < obstacle.rayon + self.rayon + self.taille_pas
+                      and (cible - obstacle.position).norme() < self.rayon + obstacle.rayon) ] )
 
-
-        liste_obstacles = [ obstacle
-                    for obstacle in obstacles
-                    if ( self.distance(obstacle) < obstacle.rayon + self.rayon + self.taille_pas ) ]
-
-        liste_obstacles_devant = [ obstacle 
-                    for obstacle in liste_obstacles if ((self.next - obstacle.position).norme() < self.rayon + obstacle.rayon)]
-
-
-        t_liste_devant = len(liste_devant)
-        t_liste_obstacles_devant = len(liste_obstacles_devant)
-        # t_liste = len(liste)
-
-        # Prochaine position
-        if t_liste_devant==0 and t_liste_obstacles_devant==0:
-            ## Aucun voyageur proche devant, on fait le deplacement optimal
-            if (reste>self.taille_pas):
-                pas = direction.normalise() * self.taille_pas
-                # pas = Vecteur( direction.x * self.taille_pas / reste, direction.y * self.taille_pas / reste)
-                self.next = self.position + pas
-            else:
-                self.next = destination
+        if nb_voyageurs_proches==0 and nb_obstacles_proches==0:
+            ## Aucune obstruction, on fait le deplacement optimal
+            self.next = cible
         else:
             ## Du monde devant
-            #if objectif==None:
             i,j = self.getPositionGrille()
 
             ## On regarde les cases autour
             valeurs = []
             for colonne in range(i-1, i+2):
                 for ligne in range(j-1, j+2):
+                    ## On saute la case où on est déja
+                    if (i==colonne and j==ligne):
+                        break
                     centre_case = Vecteur( colonne*GRIDSIZE + GRIDSIZE/2, ligne*GRIDSIZE + GRIDSIZE/2 )
                     distance_case = (self.destination - centre_case).norme()
 
                     ## Cout case = nb de voyageurs dans la case + poids relatif à la distance
                     cout = carte.nb_voyageurs(colonne, ligne) + distance_case/800
 
-                    #print(cout, cout_objectif, cout<cout_objectif)
+                    ## Si ce n'est pas la première tentative, on élimine celles déjà testées
                     if cout<=cout_objectif:
                         cout = maxsize
 
                     valeurs.append( (colonne, ligne, cout ) )
-
-            #print(cout_objectif, valeurs)
 
             ## Recherche de la case ayant le cout le plus bas
             colonne_min, ligne_min, cout_min = min(valeurs, key=lambda x: x[2])
@@ -165,14 +146,6 @@ class Voyageur(Obstacle):
                 self.observation(carte, voyageurs, obstacles, objectif, cout_min)
             else:
                 self.next = self.position
-        #elif t_liste>=2:
-        #    ## Trop de monde, on attend
-        #    self.next = self.position
-        #else:
-        #    ## On essaye d'eviter
-        #    direction = (self.position - liste[0].position) #.tourne()
-        #    pas = direction.normalise() * self.taille_pas
-        #    self.next = self.position+pas
 
     def deplacement(self):
         self.position = self.next
@@ -189,7 +162,7 @@ class Voyageur(Obstacle):
 
 class Carte:
     def __init__(self, tx=400, ty=400, nb=100):
-        """Création d'une carte réctangulaire de taille tx * ty, avec nb voyageurs"""
+        """Création d'une carte rectangulaire de taille tx * ty, avec nb voyageurs"""
         self.voyageurs = []
         self.voyageurs_arrives = []
         self.obstacles = []
@@ -223,7 +196,7 @@ class Carte:
             pos = Vecteur(randint(0, tx-1), randint(0, ty-1))
 
             ## On crée un voyageur au hasard
-            voyageur = Voyageur(pos, dest,couleur=couleur)
+            voyageur = Voyageur(pos, dest, couleur=couleur)
 
             ## On vérifie qu'il n'est pas trop proche de ceux déjà créés
             compteur = 1
@@ -298,16 +271,3 @@ class Carte:
             return maxsize
 
         return self.grille_nb_voyageurs[i][j]
-
-if __name__ == '__main__':
-    c = Carte(120,90,nb=5)
-    c.print()
-    # c.draw()
-
-    #attendre_clic()
-
-    for i in range(5000):
-        c.step()
-        if len(c.voyageurs)==0:
-            break
-        #attendre(50)
