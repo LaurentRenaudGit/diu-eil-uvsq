@@ -31,7 +31,7 @@ def quitter():
     exit(0)
 
 if __name__ == '__main__':
-    c = Carte(800, 800, nb=30)
+    c = Carte(1000, 600, nb=100)
     w,h = c.taille()
 
     pygame.init()
