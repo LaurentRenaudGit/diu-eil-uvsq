@@ -45,14 +45,12 @@ class Voyageur:
 
 # création de la liste des voyageurs
 liste_voyageurs = []                        
-for i in range(10):
-    #temp_xVel = int(random.randint(1,10)) + 1
-    temp_xVel = 2
-    #temp_yVel = int(random.randint(1,10)) + 1
-    temp_yVel = -3
+for i in range(100):
+    temp_xVel = int(random.randint(-10,10))
+    temp_yVel = int(random.randint(-10,10))
     temp_position = [50+random.randint(1,1100),50+random.randint(1,700)]
-    temp_vitesse = [2,-3]
-    liste_voyageurs.append(Voyageur(screen,temp_position,(50,5),temp_vitesse,RED))
+    temp_vitesse = [temp_xVel,temp_yVel]
+    liste_voyageurs.append(Voyageur(screen,temp_position,(10,1),temp_vitesse,RED))
 
     
 #    background(0,0,0)
@@ -73,9 +71,10 @@ while not done:
     for individu in liste_voyageurs:
         #ball.scan()
         individu.move()
+        individu.bounce()
         individu.display()
 
-    #screen.fill(black)
+    screen.fill(BLACK)
     pygame.time.wait(10)
     
 pygame.quit()
