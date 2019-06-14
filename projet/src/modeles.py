@@ -3,6 +3,10 @@ from math import sqrt, ceil
 from sys import maxsize
 
 GRIDSIZE = 30
+BLUE = (0,0,255)
+RED = (255,0,0)
+WHITE = (255,255,255)
+GREEN = (0,255,0)
 
 class Vecteur:
     def __init__(self, x, y):
@@ -67,7 +71,8 @@ class Voyageur(Obstacle):
     def __init__(self,
                  debut=Vecteur(0, 0),
                  destination=Vecteur(0, 0),
-                 taille_pas=10.0):
+                 taille_pas=10.0,
+                 couleur=BLUE):
 
         super().__init__(debut, rayon=10)
 
@@ -75,6 +80,7 @@ class Voyageur(Obstacle):
         self.destination = destination
         self.next = debut
         self.taille_pas = taille_pas
+        self.couleur = couleur
 
     def observation(self, carte, voyageurs = None, obstacles = None, objectif = None, cout_objectif = 0):
         ## S'il n'y a pas d'objectif, aller vers la destination
@@ -89,6 +95,14 @@ class Voyageur(Obstacle):
         # Ce qui reste à parcourir
         reste = direction.norme()
 
+        # debug
+        if (reste>self.taille_pas):
+            pas = direction.normalise() * self.taille_pas
+            # pas = Vecteur( direction.x * self.taille_pas / reste, direction.y * self.taille_pas / reste)
+            self.next = self.position + pas
+        else:
+            self.next = destination
+        
         # Liste des voyageurs proches
         liste = [ voyageur
                     for voyageur in voyageurs
@@ -96,7 +110,7 @@ class Voyageur(Obstacle):
                          and (self.distance(voyageur) < voyageur.rayon + self.rayon + self.taille_pas) ) ]
 
         liste_devant = [ voyageur 
-                    for voyageur in liste if (voyageur.position-destination).norme()<reste ]
+                    for voyageur in liste if ((self.next - voyageur.position).norme() < self.rayon + voyageur.rayon) ]
 
 
         liste_obstacles = [ obstacle
@@ -104,7 +118,7 @@ class Voyageur(Obstacle):
                     if ( self.distance(obstacle) < obstacle.rayon + self.rayon + self.taille_pas ) ]
 
         liste_obstacles_devant = [ obstacle 
-                    for obstacle in liste_obstacles if (obstacle.position-destination).norme()<reste]
+                    for obstacle in liste_obstacles if ((self.next - obstacle.position).norme() < self.rayon + obstacle.rayon)]
 
 
         t_liste_devant = len(liste_devant)
@@ -185,27 +199,31 @@ class Carte:
 
         #fenetre(tx+100, ty+100, "Flux")
         self.obstacles.append( Obstacle( Vecteur(tx/2, ty/2), 30) )
-        self.obstacles.append( Obstacle( Vecteur(tx/6, ty/6), 30) )
-        self.obstacles.append( Obstacle( Vecteur(5*tx/6, ty/6), 30) )
-        self.obstacles.append( Obstacle( Vecteur(tx/6, 5*ty/6), 30) )
-        self.obstacles.append( Obstacle( Vecteur(5*tx/6, 5*ty/6), 30) )
+        self.obstacles.append( Obstacle( Vecteur(tx/8, ty/8), 30) )
+        self.obstacles.append( Obstacle( Vecteur(7*tx/8, ty/8), 30) )
+        self.obstacles.append( Obstacle( Vecteur(tx/8, 7*ty/8), 30) )
+        self.obstacles.append( Obstacle( Vecteur(7*tx/8, 7*ty/8), 30) )
 
         for i in range(self.nb):
 
             dice = randint(0, 3)
             if dice == 0:
                 dest = Vecteur(0, 0)
+                couleur = RED
             elif dice == 1:
                 dest = Vecteur(tx-1, 0)
+                couleur = GREEN
             elif dice == 2:
                 dest = Vecteur(tx-1, ty-1)
+                couleur = WHITE
             else:
                 dest = Vecteur(0, ty-1)
+                couleur = BLUE
 
             pos = Vecteur(randint(0, tx-1), randint(0, ty-1))
 
             ## On crée un voyageur au hasard
-            voyageur = Voyageur(pos, dest)
+            voyageur = Voyageur(pos, dest,couleur=couleur)
 
             ## On vérifie qu'il n'est pas trop proche de ceux déjà créés
             compteur = 1

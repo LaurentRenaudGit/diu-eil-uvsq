@@ -18,11 +18,11 @@ def dessiner_carte( carte ):
         #         B = trajet[i+1].to_int()
         #         pygame.draw.line(screen, [255, 0, 0], A, B)
         position = v.getPosition().to_int()
-        pygame.draw.circle(screen, [255, 0, 0], position, v.rayon,1)
+        pygame.draw.circle(screen, v.couleur, position, v.rayon)
 
     for o in carte.liste_obstacles():
         position = o.getPosition().to_int()
-        pygame.draw.circle(screen, [255, 255, 0], position, o.rayon,1)
+        pygame.draw.circle(screen, [255, 255, 0], position, o.rayon)
 
     pygame.display.flip()
 
