@@ -49,9 +49,12 @@ class Obstacle:
         self.rayon = rayon
         self.couleur = couleur
 
+    # Methode publique
     def setPosition(self, vecteur):
         self.position = vecteur
 
+    # Methode publique
+    ## Fix : renvoyer une copie pour protéger la position ?
     def getPosition(self):
         return self.position
 
@@ -61,8 +64,7 @@ class Obstacle:
         return i,j
 
     def distance(self, obstacle):
-        return (self.position  - obstacle.position).norme()-3
-
+        return (self.position  - obstacle.position).norme()
 
 class Voyageur(Obstacle):
     def __init__(self,
@@ -125,7 +127,7 @@ class Voyageur(Obstacle):
                 for ligne in range(j-1, j+2):
                     ## On saute la case où on est déja
                     if (i==colonne and j==ligne):
-                        break
+                        continue
                     centre_case = Vecteur( colonne*GRIDSIZE + GRIDSIZE/2, ligne*GRIDSIZE + GRIDSIZE/2 )
                     distance_case = (self.destination - centre_case).norme()
 
@@ -151,9 +153,11 @@ class Voyageur(Obstacle):
         self.position = self.next
         self.trajet.append(self.position)
 
+    ## Methode publique
     def arrive(self):
         return self.position == self.destination
 
+    ## Methode publique
     def getTrajet(self):
         return self.trajet
 
@@ -170,7 +174,6 @@ class Carte:
         self.w = tx
         self.h = ty
 
-        #fenetre(tx+100, ty+100, "Flux")
         self.obstacles.append( Obstacle( Vecteur(tx/2, ty/2), 30) )
         self.obstacles.append( Obstacle( Vecteur(tx/8, ty/8), 30) )
         self.obstacles.append( Obstacle( Vecteur(7*tx/8, ty/8), 30) )

@@ -7,6 +7,8 @@ class Clickable():
     def __init__(self, screen):
         self.clicked = False
         self.screen = screen
+        self.action = False
+        self.hover = False
 
     def isIn(self, mouseX, mouseY):
         pass
@@ -21,10 +23,10 @@ class Clickable():
         pass
 
     def mouseOver(self):
-        pass
+        self.hover = True
 
     def mouseLeave(self):
-        pass
+        self.hover = False
 
     def draw(self):
         pass
@@ -37,8 +39,9 @@ class Button(Clickable):
         self.y = y
         self.text = text
         self.w = 150
-        self.h = 50
+        self.h = 30
         self.action = action
+        self.color = [100, 100, 100]
 
     def isIn(self, mouseX, mouseY):
         return (mouseX >= self.x and mouseX < self.x + self.w
@@ -47,6 +50,20 @@ class Button(Clickable):
     def mouseReleased(self, mouseX, mouseY):
         if self.isIn(mouseX, mouseY):
             self.action()
+
+    def draw(self):
+        pygame.draw.rect( self.screen, self.color, [self.x, self.y, self.w, self.h] )
+        font = pygame.font.SysFont('Helvetica', 20)
+        text_surface = font.render(self.text, False, (255, 255, 255))
+        self.screen.blit(text_surface, (self.x+5, self.y+2))
+
+    def mouseOver(self):
+        self.hover = True
+        self.color = [128, 128, 128]
+
+    def mouseLeave(self):
+        self.hover = False
+        self.color = [96, 96, 96]
 
 class ObstacleController(Clickable):
     """Controleur des Obstacles/Vayageurs : chargé du dessin et de l'interaction"""
@@ -60,13 +77,14 @@ class ObstacleController(Clickable):
         self.r2 = self.rayon * self.rayon
 
     def isIn(self, mouseX, mouseY):
-        dx = mouseX - self.x
-        dy = mouseY - self.y
+        dx = mouseX - (self.x)
+        dy = mouseY - (self.y)
         return (dx*dx+dy*dy < self.r2)
 
     def mouseMove(self, relX, relY):
         self.x += relX
         self.y += relY
+
         self.obstacle.setPosition( Vecteur(self.x, self.y) )
 
     def draw(self):
@@ -87,14 +105,23 @@ class ObstacleController(Clickable):
         # except:
         #     pass
 
+PAUSE = 0
+PLAY  = 1
+
 class CarteObserver:
     def __init__(self, carte):
         self.carte = carte
         self.clicked = None
-        w,h = self.carte.taille()
+        self.w = self.h = 0
+        self.mode = PAUSE
 
-        self.screen = pygame.display.set_mode( [w, h])
+        self.w, self.h = self.carte.taille()
+
+        ## Création d'une fenetre avec une marge + 40px pour le menu
+        pygame.display.set_caption("Simulateur de foule")
+        self.screen = pygame.display.set_mode( [self.w, self.h + 40])
         self.clock = pygame.time.Clock()
+        self.font = pygame.font.SysFont('Helvetica', 16)
 
         self.clickables = []
         voyageurs, arrives = carte.liste_voyageurs()
@@ -107,12 +134,45 @@ class CarteObserver:
             o_control = ObstacleController(self.screen, o)
             self.clickables.append( o_control)
 
+        ## Menu
+        self.menu = []
+        ## Bouton 1 = Play / Pause
+        bouton = Button(self.screen, "Lancer", 10, self.h+5, self.togglePause)
+        self.menu.append(bouton)
+
+        bouton = Button(self.screen, "Une étape", 170, self.h+5, self.advance)
+        self.menu.append(bouton)
+
+        ## Ajout du menu au elements clickables
+        self.clickables += self.menu
+
+    def togglePause(self):
+        b = self.menu[0]
+        if b.text == "Lancer":
+            self.mode = PLAY
+            b.text = "Pauser"
+        else:
+            self.mode = PAUSE
+            b.text = "Lancer"
+
+    def advance(self):
+        b = self.menu[0]
+        self.mode = PAUSE
+        b.text = "Lancer"
+        self.carte.step()
 
     def redraw(self):
-        self.screen.fill( [0,0,0] )
+        self.screen.fill( [0, 0, 0])
 
+        ## Dessin des objets de la simulation
         for clickable in self.clickables:
-            clickable.draw()
+            if not clickable.action:
+                clickable.draw()
+
+        ## Dessin du menu
+        pygame.draw.rect( self.screen, [64, 64, 64], [0, self.h, self.w, 40] )
+        for bouton in self.menu:
+            bouton.draw()
 
         pygame.display.flip()
 
@@ -124,11 +184,11 @@ class CarteObserver:
 
         while do_loop:
             # Si on activé un Clickable, stopper l'avancee
-            if not self.clicked:
+            if not self.clicked and self.mode == PLAY:
                 self.carte.step()
 
+            # Rafraichissement de l'ecran
             self.redraw()
-
 
             # Si tout le monde est arrivé, on quitte
             if len(self.carte.voyageurs)==0:
@@ -159,10 +219,18 @@ class CarteObserver:
                             break
 
                 ## Deplacement de la souris
-                if event.type == pygame.MOUSEMOTION and self.clicked:
-                    ## on active si un controlleur est actif (drag'n drop!)
-                    relx, rely = event.rel
-                    self.clicked.mouseMove(relx,rely)
+                if event.type == pygame.MOUSEMOTION:
+                    if self.clicked: ## on active si un controlleur est actif (drag'n drop!)
+                        relx, rely = event.rel
+                        self.clicked.mouseMove(relx,rely)
+
+                    ## Evenement "mouseover"
+                    mx, my = event.pos
+                    for c in self.clickables:
+                        if c.isIn(mx, my):
+                            c.mouseOver()
+                        elif c.hover:
+                            c.mouseLeave()
 
                 ## Relachement du bouton
                 if event.type == pygame.MOUSEBUTTONUP:
@@ -176,6 +244,7 @@ class CarteObserver:
 
 if __name__ == '__main__':
     pygame.init()
+    pygame.font.init()
 
     c = Carte(1000, 600, nb=100)
     observer = CarteObserver(c)
