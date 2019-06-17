@@ -43,11 +43,13 @@ class Obstacle:
     def __init__(self,
                  debut=Vecteur(0, 0),
                  rayon=5,
-                 couleur=YELLOW):
+                 couleur=YELLOW,
+                 sortie = False):
 
         self.position = debut
         self.rayon = rayon
         self.couleur = couleur
+        self.sortie = sortie
 
     # Methode publique
     def setPosition(self, vecteur):
@@ -68,8 +70,8 @@ class Obstacle:
 
 class Voyageur(Obstacle):
     def __init__(self,
-                 debut=Vecteur(0, 0),
-                 destination=Vecteur(0, 0),
+                 debut,
+                 destination,
                  taille_pas=10.0,
                  couleur=BLUE):
 
@@ -79,11 +81,12 @@ class Voyageur(Obstacle):
         self.destination = destination
         self.next = debut
         self.taille_pas = taille_pas
+        self.arrivee_atteinte = False
 
     def observation(self, carte, voyageurs = None, obstacles = None, objectif = None, cout_objectif = 0):
         ## S'il n'y a pas d'objectif, aller vers la destination
         if objectif==None:
-            destination = self.destination 
+            destination = self.destination.position
         else:
             destination = objectif
 
@@ -129,7 +132,7 @@ class Voyageur(Obstacle):
                     if (i==colonne and j==ligne):
                         continue
                     centre_case = Vecteur( colonne*GRIDSIZE + GRIDSIZE/2, ligne*GRIDSIZE + GRIDSIZE/2 )
-                    distance_case = (self.destination - centre_case).norme()
+                    distance_case = (self.destination.position - centre_case).norme()
 
                     ## Cout case = nb de voyageurs dans la case + poids relatif à la distance
                     cout = carte.nb_voyageurs(colonne, ligne) + distance_case/800
@@ -152,74 +155,67 @@ class Voyageur(Obstacle):
     def deplacement(self):
         self.position = self.next
         self.trajet.append(self.position)
+        if self.position == self.destination.position:
+            self.arrivee_atteinte = True
 
     ## Methode publique
     def arrive(self):
-        return self.position == self.destination
+        return self.arrivee_atteinte
 
     ## Methode publique
     def getTrajet(self):
         return self.trajet
 
     def __str__(self):
-        return f"{self.position} => {self.destination}"
+        return f"{self.position} => {self.destination.position}"
 
 class Carte:
-    def __init__(self, tx=400, ty=400, nb=100):
+    def __init__(self, tx=400, ty=400):
         """Création d'une carte rectangulaire de taille tx * ty, avec nb voyageurs"""
         self.voyageurs = []
         self.voyageurs_arrives = []
         self.obstacles = []
-        self.nb = nb
+        self.arrivees = []
+        self.nb = 0
         self.w = tx
         self.h = ty
 
-        self.obstacles.append( Obstacle( Vecteur(tx/2, ty/2), 30) )
-        self.obstacles.append( Obstacle( Vecteur(tx/8, ty/8), 30) )
-        self.obstacles.append( Obstacle( Vecteur(7*tx/8, ty/8), 30) )
-        self.obstacles.append( Obstacle( Vecteur(tx/8, 7*ty/8), 30) )
-        self.obstacles.append( Obstacle( Vecteur(7*tx/8, 7*ty/8), 30) )
 
-        for i in range(self.nb):
+    def reset(self):
+        self.voyageurs = []
+        self.voyageurs_arrives = []
+        self.obstacles = []
+        self.arrivees = []
+        self.nb = 0
 
-            dice = randint(0, 3)
-            if dice == 0:
-                dest = Vecteur(0, 0)
-                couleur = RED
-            elif dice == 1:
-                dest = Vecteur(tx-1, 0)
-                couleur = GREEN
-            elif dice == 2:
-                dest = Vecteur(tx-1, ty-1)
-                couleur = WHITE
-            else:
-                dest = Vecteur(0, ty-1)
-                couleur = BLUE
+    def ajouter_arrivee(self, x, y, couleur):
+        arrivee = Obstacle( Vecteur(x, y), 10, couleur = couleur, sortie=True)
+        self.arrivees.append( arrivee )
 
-            pos = Vecteur(randint(0, tx-1), randint(0, ty-1))
+        return arrivee
 
-            ## On crée un voyageur au hasard
-            voyageur = Voyageur(pos, dest, couleur=couleur)
+    def ajouter_obstacle(self, x, y):
+        obstacle = Obstacle( Vecteur(x, y), 30)
+        self.obstacles.append( obstacle )
 
-            ## On vérifie qu'il n'est pas trop proche de ceux déjà créés
-            compteur = 1
-            while compteur!=0:
-                compteur = 0
-                for j in range(i):
-                    if voyageur.distance(self.voyageurs[j]) < 2*voyageur.rayon :
-                        compteur = 1
-                        voyageur.setPosition( Vecteur(randint(0, tx-1), randint(0, ty-1)) )
-                        break
+        return obstacle
 
-                for obstacle in self.obstacles:
-                    if voyageur.distance( obstacle ) < voyageur.rayon + obstacle.rayon :
-                        compteur = 1
-                        voyageur.setPosition( Vecteur(randint(0, tx-1), randint(0, ty-1)) )
-                        break
+    def ajouter_voyageur(self, x, y, arrivee, check_obstacles = False):
+        voyageur = Voyageur( Vecteur(x,y), arrivee, couleur=arrivee.couleur)
 
-            self.voyageurs.append(voyageur)
-        
-        self.compter_voyageurs()
+        ## On vérifie si c'est ok comme position de voyageur...
+        if check_obstacles:
+            for v in self.voyageurs:
+                if voyageur.distance( v ) < 2*voyageur.rayon:
+                    return None
+            for o in self.obstacles:
+                if voyageur.distance( o ) < voyageur.rayon + o.rayon:
+                    return None
+
+        voyageur = Voyageur( Vecteur(x,y), arrivee, couleur=arrivee.couleur)
+        self.voyageurs.append( voyageur )
+
+        return voyageur
 
     def taille(self):
         """Renvoie la taille de la carte"""
@@ -230,8 +226,12 @@ class Carte:
         return self.voyageurs, self.voyageurs_arrives
 
     def liste_obstacles(self):
-        """Renvoie les deux listes des voyageurs"""
+        """Renvoie la liste des obstacles"""
         return self.obstacles
+
+    def liste_arrivees(self):
+        """Renvoie la liste des arrivees"""
+        return self.arrivees
 
     def step(self):
         for v in self.voyageurs:

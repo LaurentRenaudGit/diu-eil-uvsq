@@ -92,7 +92,10 @@ class ObstacleController(Clickable):
             return
 
         self.x, self.y = self.obstacle.getPosition().to_int()
-        pygame.draw.circle(self.screen, self.obstacle.couleur, [self.x, self.y], self.rayon)
+        if self.obstacle.sortie:
+            pygame.draw.circle(self.screen, self.obstacle.couleur, [self.x, self.y], self.rayon, 1)
+        else:
+            pygame.draw.circle(self.screen, self.obstacle.couleur, [self.x, self.y], self.rayon)
         ## Dessin de la trajectoire
         # try:
         #     trajet = self.obstacle.getTrajet()
@@ -112,27 +115,17 @@ class CarteObserver:
     def __init__(self, carte):
         self.carte = carte
         self.clicked = None
-        self.w = self.h = 0
+        self.w = self.carte.w
+        self.h = self.carte.h
         self.mode = PAUSE
 
-        self.w, self.h = self.carte.taille()
+        ## self.w, self.h = self.carte.taille()
 
         ## Création d'une fenetre avec une marge + 40px pour le menu
         pygame.display.set_caption("Simulateur de foule")
         self.screen = pygame.display.set_mode( [self.w, self.h + 40])
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont('Helvetica', 16)
-
-        self.clickables = []
-        voyageurs, arrives = carte.liste_voyageurs()
-
-        for v in voyageurs:
-            v_control = ObstacleController(self.screen, v)
-            self.clickables.append( v_control)
-
-        for o in carte.liste_obstacles():
-            o_control = ObstacleController(self.screen, o)
-            self.clickables.append( o_control)
 
         ## Menu
         self.menu = []
@@ -143,8 +136,91 @@ class CarteObserver:
         bouton = Button(self.screen, "Une étape", 170, self.h+5, self.advance)
         self.menu.append(bouton)
 
+        bouton = Button(self.screen, "Modèle 1", 330, self.h+5, self.carte_modele_1)
+        self.menu.append(bouton)
+
+        bouton = Button(self.screen, "Modèle 2", 490, self.h+5, self.carte_modele_2)
+        self.menu.append(bouton)
+
+        ## self.init_carte()
+        self.carte_modele_1()
+
+    def init_carte(self):
+        self.clickables = []
+        voyageurs, arrives = self.carte.liste_voyageurs()
+
+        for a in self.carte.liste_arrivees():
+            a_control = ObstacleController(self.screen, a)
+            self.clickables.append( a_control)
+
+        for o in self.carte.liste_obstacles():
+            o_control = ObstacleController(self.screen, o)
+            self.clickables.append( o_control)
+
+        for v in voyageurs:
+            v_control = ObstacleController(self.screen, v)
+            self.clickables.append( v_control)
+
         ## Ajout du menu au elements clickables
         self.clickables += self.menu
+
+    def carte_modele_1(self):
+        tx,ty = self.w, self.h
+        self.carte.reset()
+
+        self.carte.ajouter_arrivee(10,10, RED )
+        self.carte.ajouter_arrivee(tx-11, 10, GREEN )
+        self.carte.ajouter_arrivee(tx-11, ty-11, WHITE )
+        self.carte.ajouter_arrivee(10, ty-11, BLUE )
+
+        self.carte.ajouter_obstacle(tx/2, ty/2)
+        self.carte.ajouter_obstacle(tx/8, ty/8)
+        self.carte.ajouter_obstacle(7*tx/8, ty/8)
+        self.carte.ajouter_obstacle(tx/8, 7*ty/8)
+        self.carte.ajouter_obstacle(7*tx/8, 7*ty/8)
+
+        for i in range(100):
+
+            dice = randint(0, 3)
+            if dice == 0:
+                dest = self.carte.arrivees[0]
+            elif dice == 1:
+                dest = self.carte.arrivees[1]
+            elif dice == 2:
+                dest = self.carte.arrivees[2]
+            else:
+                dest = self.carte.arrivees[3]
+
+            voyageur = None
+
+            while not(voyageur):
+                voyageur = self.carte.ajouter_voyageur(randint(0, tx-1), randint(0, ty-1), dest, check_obstacles = True)
+
+        self.carte.compter_voyageurs()
+        self.init_carte()
+
+    def carte_modele_2(self):
+        tx,ty = self.w, self.h
+        self.carte.reset()
+
+        self.carte.ajouter_arrivee(10,10, RED )
+        self.carte.ajouter_arrivee(tx-10, 10, GREEN )
+
+        for i in range(4):
+            self.carte.ajouter_obstacle(30, 60*i + 200)
+            self.carte.ajouter_obstacle(969, 60*i + 200)
+
+        for i in range(60):
+            voyageur = None
+            while not(voyageur):
+                voyageur = self.carte.ajouter_voyageur(randint(0, tx/4), ty - 1 - randint(0, ty/4), self.carte.arrivees[1], check_obstacles = True)
+
+            voyageur = None
+            while not(voyageur):
+                voyageur = self.carte.ajouter_voyageur(tx - 1 - randint(0, int(tx/2) ), ty - 1 - randint(0, int(ty/2)), self.carte.arrivees[0], check_obstacles = True)
+
+        self.carte.compter_voyageurs()
+        self.init_carte()
 
     def togglePause(self):
         b = self.menu[0]
@@ -246,7 +322,7 @@ if __name__ == '__main__':
     pygame.init()
     pygame.font.init()
 
-    c = Carte(1000, 600, nb=100)
+    c = Carte(1000, 600)
     observer = CarteObserver(c)
     observer.run()
 
