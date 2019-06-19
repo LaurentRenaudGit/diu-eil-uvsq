@@ -50,8 +50,56 @@ Fonction classe_1nn(o)
     Renvoyer c(voisin)
 ~~~
 
-_Exercice: traduire en python cet algorithme_
+_Exercice: en vous aidant du fichier algo_1nn.py compléter l'algorithme et vérifier son fonctionnement_
 
+## 3. Principe du k-NN
 
+Le contexte de travail est le même que pour l'algorithme 1-NN, mais on procède de la façon suivante :
 
+1.  Parmi les $n$ objets de $E$, on recherche les $k$ voisins les plus proches de $o$.
 
+2.  Parmi ces $k$ voisins, on compte les effectifs de chaque classe
+    et on attribue à $o$ la classe majoritaire.
+
+Remarque : dans le cas d'égalité d'effectifs entre deux classes, la classe attribuée dépendra de l'implémentation
+du point 2.
+
+Algorithme naïf : on suppose 
+
+-   qu'on dispose d'une fonction distance_max(objet, liste) renvoyant la plus grande distance entre un objet et les objets de la liste
+-   qu'il n'y a que deux classes d'objets _c1_ et _c2_
+
+~~~
+Fonction classe_knn(o)
+    Pour j allant 1 à k:
+        ajouter o_j à voisins
+    FinPour
+
+    dmax = distance_max(o, voisins)
+
+    Pour j allant k+1 à n:
+        distance = d(o,o_j)
+        Si distance < dmax Alors
+            Enlever le voisin le plus éloigné de o
+            Ajouter o_j à voisins
+            dmax = distance_max(o, voisins)
+        FinSi
+    FinPour
+
+    effectif_c1 = 0
+    effectif_c2 = 0
+
+    Pour objet dans voisins:
+        Si c(objet) = c1
+            Augmenter effectif_c1
+        Sinon
+            Augmenter effectif_c2
+        FinSi
+    FinPour
+
+    Si effectif_c1 > effectif_c2
+        Renvoyer c1
+    Sinon
+        Renvoyer c2
+    FinSi
+~~~
