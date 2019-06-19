@@ -1,0 +1,57 @@
+<!--
+    output=word
+    font-size=14
+-->
+
+# Algorithme des k plus proches voisins
+
+## 1. Introduction
+
+En intelligence artificielle, il est souvent nécessaire de savoir classifier un objet
+selon une liste de catégories connues
+(par exemple, une image contient-elle un chat ou une voiture ?)
+
+Il existe de nombreux algorithmes pour faire cela.
+
+L'un d'eux s'appelle _Algorithme des k plus proches voisins_ 
+(_k **N**earest **N**eighbors_ en anglais ou _kNN_) où _k_ est un nombre entier 
+strictement positif correspondant au nombre de voisins.
+
+## 2. Principe du 1-NN
+
+On considère un ensemble de $n$ objets $E = \{ o_1, o_2, ..., o_n \}$ 
+dont on connait la _classe_ $c(o_1)$, $c(o_2)$, ... $c(o_n)$.
+
+On dispose d'une méthode de mesure de distance entre deux objets : $d(o_i,o_j)$.
+
+On introduit un nouvel objet $o$ et on souhaite lui attribuer une classe selon l'algorithme suivant:
+
+1.  Recherche de l'objet $o_i$ (pour $i$ entre $1$ et $n$) qui est le plus proche de $o$.
+
+2.  Attribution de la classe $c(o_i)$ à $o$.
+
+Remarque : la recherche de l'objet le plus proche de $o$ consiste à trouver le minimum dans une liste de nombres réels
+correspondant à la distance entre $o$ et chacun des objet de l'ensemble $E$.
+
+~~~
+Fonction classe_1nn(o)
+    
+    distance_min = Infini
+    voisin = Nul
+
+    Pour j allant 1 à n:
+        distance = d(o,o_j)
+        Si distance < distance_min Alors
+            distance_min = distance
+            voisin = o_j
+        FinSi
+    FinPour
+
+    Renvoyer c(voisin)
+~~~
+
+_Exercice: traduire en python cet algorithme_
+
+
+
+

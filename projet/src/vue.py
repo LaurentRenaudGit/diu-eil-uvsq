@@ -32,7 +32,7 @@ class Clickable():
         pass
 
 class Button(Clickable):
-    """Une classe pour créer des boutons d'interface"""
+    "Une classe pour créer des boutons d'interface"
     def __init__(self, screen, text, x, y, action):
         super().__init__(screen)
         self.x = x
