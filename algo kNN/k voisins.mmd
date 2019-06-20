@@ -1,5 +1,5 @@
 <!--
-    output=word
+    output=pdf
     font-size=14
 -->
 
@@ -8,8 +8,12 @@
 ## 1. Introduction
 
 En intelligence artificielle, il est souvent nécessaire de savoir classifier un objet
-selon une liste de catégories connues
-(par exemple, une image contient-elle un chat ou une voiture ?)
+selon une liste de catégories connues.
+
+Par exemple:
+
+- une image contient-elle un chat ou une voiture ?
+- un email qu'on reçoit contient-il du spam ou pas ?
 
 Il existe de nombreux algorithmes pour faire cela.
 
@@ -49,6 +53,36 @@ Fonction classe_1nn(o)
 
     Renvoyer c(voisin)
 ~~~
+
+
+\begin{tikzpicture}
+    \draw (0,0) grid (10,10);
+
+    \foreach \x in{0,...,10} {
+        \node at (\x,-0.5) {$\x$};
+        \node at (-0.5,\x) {$\x$};
+    };
+
+    \draw[fill,blue] (9,2) circle (0.15);
+    \draw[fill,blue] (7,2) circle (0.15);
+    \draw[fill,blue] (4,3) circle (0.15);
+    \draw[fill,blue] (8,8) circle (0.15);
+    \draw[fill,blue] (3,7) circle (0.15);
+
+    %\draw[very thick,red] (1,1) circle (0.15);
+    %\draw[very thick,red] (3,4) circle (0.15);
+    %\draw[very thick,red] (1,5) circle (0.15);
+    %\draw[very thick,red] (7,5) circle (0.15);
+    %\draw[very thick,red] (5,9) circle (0.15);
+    %\draw (9,8) node {\large $\times$} node[below right] {\large $K$} ;
+
+    \node[red] at (1,1) {\large $\times$};
+    \node[red] at (3,4) {\large $\times$};
+    \node[red] at (1,5) {\large $\times$};
+    \node[red] at (7,5) {\large $\times$};
+    \node[red] at (5,9) {\large $\times$};
+    \draw (9,8) circle (0.15)node[below right] {\large $K$} ;
+\end{tikzpicture}
 
 _Exercice: en vous aidant du fichier algo_1nn.py compléter l'algorithme et vérifier son fonctionnement_
 
