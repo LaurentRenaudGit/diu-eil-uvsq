@@ -36,7 +36,7 @@ xp = []
 yp = []
 cp = []
 
-for i in range(10000):
+for i in range(100):
 	o = ( random.uniform(0,10), random.uniform(0,10), None)
 	xp.append( o[0] )
 	yp.append( o[1] )
