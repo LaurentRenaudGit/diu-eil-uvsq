@@ -4,45 +4,44 @@ import threading
 _ZF = 12    ## Facteur de zoom de la zone de dessin
 _W  = 64    ## Taille de la zone de dessins en pixels
             ##    on va en extraire un dessin de 16x16 pixels après mise à l'échelle
-WHITE = (255, 255, 255)
-BLACK = (0,0,0)
+im_size = 16
 GRIS  = (200,200,200)
 
 class Chiffre():
+    """Une classe représentant un tableau de pixels (0 à 255) de taille im_size * im_size"""
     def __init__(self):
         self.pixels = [ ]
         self.valeur = -1
     
     def draw(self, screen, dx, dy):
-        for x in range(16):
-            for y in range(16):
-                if self.pixels[x+16*y]==0:
-                    color = WHITE
-                else:
-                    color = BLACK
+        for x in range(im_size):
+            for y in range(im_size):
+                v = self.pixels[x+im_size*y]
+                color = (v,v,v)
                 
                 pygame.draw.rect( screen, color, (x*2 + dx, y*2 + dy, 2, 2) )
-        
-            
+
 class Drawing():
+    """Une classe pour gérer la zone de dessin de l'interface"""
     def __init__(self):
         self.pixels = [ [0 for i in range(_W) ]  for i in range(_W) ]
         self.color = None
+        self.cx = self.cy = self.cropSize = -1000
         
     def draw(self, screen):
         for x in range(_W):
             for y in range(_W):
-                if self.pixels[x][y]==0:
-                    color = WHITE
-                else:
-                    color = BLACK
+                v = 255 - self.pixels[x][y]
+                color = (v,v,v)
                 
                 ## Version zoomee
                 pygame.draw.rect( screen, color, (x*_ZF, y*_ZF, _ZF, _ZF) )
                 
-                ## Version normale
-                pygame.draw.rect( screen, color, (_W*_ZF+ 5 + x, y, 1, 1) )
-                
+                ## Cropping
+                dx = min(_W-self.cx, self.cropSize+1)
+                dy = min(_W-self.cy, self.cropSize+1)
+                pygame.draw.rect( screen, (255,0,0), (self.cx*_ZF, self.cy*_ZF, dx*_ZF, dy*_ZF), 1)
+    
     def pen_up(self):
         self.ox = None
         self.color = None
@@ -52,7 +51,14 @@ class Drawing():
         for dx in range(-2,3):
             for dy in range(-2,3):
                 if x+dx>=0 and x+dx<_W and y+dy>=0 and y+dy<_W and abs(dx)+abs(dy)!=4:
-                    self.pixels[x+dx][y+dy] = self.color
+                    if self.color==255:
+                        c = self.pixels[x+dx][y+dy]
+                        c += self.color // (2 + abs(dx)+abs(dy))
+                        if c>255:
+                            c = 255
+                    else:
+                        c = 0
+                    self.pixels[x+dx][y+dy] = c
         ## 3x3
         #for dx in range(-1,2):
         #    for dy in range(-1,2):
@@ -97,13 +103,16 @@ class Drawing():
         if mx<0 or my<0 or mx>=_W or my>=_W:
             return
         
-        self.color = 1-self.pixels[mx][my]
+        if self.pixels[mx][my]==0:
+            self.color = 255
+        else:
+            self.color = 0
         self.ox = mx
         self.oy = my
         self.paint(mx,my)
 
-    def clip(self):
-        """Cette fonction transforme la zone de dessin non vierge en image 16x16
+    def clip(self, parent):
+        """Cette fonction transforme la zone de dessin non vierge en image de taille im_size
         sous forme de tableau exploitable par la classe Chiffre"""
         data   = []
         
@@ -113,7 +122,8 @@ class Drawing():
         while not done:
             mx += 1
             if mx==_W:
-                return [ 0 for i in range(256) ]
+                self.cx = self.cy = -1000
+                return [ 255 for i in range(im_size*im_size) ]
             for y in range(_W):
                 if self.pixels[mx][y] != 0:
                     done = True
@@ -151,10 +161,12 @@ class Drawing():
       
         # Calcul de la taille de la zone à transformer en 16x16      
         cropSize = max(Mx-mx, My-my)
-        mx = (mx+Mx-cropSize)//2
-        my = (my+My-cropSize)//2
-    
-        ns = 16
+        self.cx = mx = (mx+Mx-cropSize)//2
+        self.cy = my = (my+My-cropSize)//2        
+        
+        self.cropSize = cropSize 
+        
+        ns = im_size
         cropSize += 1
         
         # Changement d'échelle
@@ -164,17 +176,15 @@ class Drawing():
                 ox = mx + x*cropSize//ns
                 
                 if (ox<0 or ox >= _W or oy<0 or oy >= _W):
-                    data.append(0)
+                    data.append(255)
                 else:
-                    v = self.pixels[ox][oy]
-                    if (v==0):
-                        data.append(0)
-                    else:
-                        data.append(1)
+                    data.append(255-self.pixels[ox][oy])
     
         return data
         
 class VoisinThread(threading.Thread):
+    """Classe pour calculer les plus proches voisins.
+    Utilise un thread afin de ne pas bloquer l'interface pendant le calcul..."""
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
@@ -199,7 +209,7 @@ class VoisinThread(threading.Thread):
         
         ## Dessin des voisins en cours
         for i in range(k):
-            temp[i][0].draw(self.parent.screen, _ZF*_W + (_W+5-32)//2, 2 *_W + 36*i )
+            temp[i][0].draw(self.parent.screen, _ZF*_W + (_W+5-2*im_size)//2, 2 *_W + (im_size*2+3)*i )
         
         i = k+1
     
@@ -217,7 +227,7 @@ class VoisinThread(threading.Thread):
 
                 ## On redessine
                 for j in range(k):
-                    temp[j][0].draw(self.parent.screen, _ZF*_W + (_W+5-32)//2, 2 *_W + 36*j )
+                    temp[j][0].draw(self.parent.screen, _ZF*_W + (_W+5-2*im_size)//2, 2 *_W + (im_size*2+3)*j )
             
             i += 1                
 
@@ -230,7 +240,9 @@ class VoisinThread(threading.Thread):
 
   
 class Interface():
-    def __init__(self, f_distance, f_valeur, k=1, N=10000):
+    def __init__(self, images, f_distance, f_valeur, k=1, N=10000):
+        global im_size
+    
         assert k<=15, "k doit valoir au maximum 15"
         assert N<=10000, "Il n'y a que 10000 valeurs connues, N ne peut pas être supérieur"
     
@@ -243,29 +255,56 @@ class Interface():
         ## Lecture des chiffres du fichier
         print("Lecture de la base de donnée de valeurs connues...")
         
-        im_file = open("images.raw", "rb")
-        vl_file = open("valeurs.raw", "rb")
-        vl_file.seek(8)
+        im_file = open(images, "rb")
+        
+        im_size, bpp = im_file.read(2)
+        #im_size = ord(im_size)
+        
+        if bpp == 1:
+            mask = 1            ## Pour extraire les bits des octets lus
+            mul_val = 255       ## Pour ramener la plage de x bits à l'intervalle [0;255]
+        elif bpp == 2:
+            mask = 3            ## 2 bits : mask = 00000011
+            mul_val = 85        ## [0;3] * 85 => [0;255]
+        elif bpp == 4:
+            mask = 15           ## 4 bits : mask = 00001111
+            mul_val = 17        ## [0;15] * 17 => [0;255]
+        else:
+            mask = 255          ## 8 bits : mask = 11111111
+            mul_val = 1         ## [0;255] => rien à faire
+        #for i in range(bpp):
+        #    mask = (mask << 1) + 1
         
         for i in range(N):
             c = Chiffre()
-        
-            # Chaque chiffre est codé sur 32 octets
-            for y in range(32):
-                # Lecture d'un octet
-                v = ord( im_file.read(1) )
-                
-                # Lecture des 8 bits pour former les pixels
-                for i in range(8):
-                    b = ( v >> (7-i) ) & 1
-                    c.pixels.append(b)
-
-            c.valeur = ord( vl_file.read(1) )
             
+            ## Valeur du chiffre
+            c.valeur = ord( im_file.read(1) )
+            
+            nb_pix = im_size*im_size
+            byte = 0
+            nb_bits = 0
+            
+            while nb_pix>0:
+                ## Lecture d'un octet si nécessaire
+                if nb_bits == 0:
+                    byte = ord( im_file.read(1) )
+                    nb_bits = 8
+                
+                ## On tire les bits les plus à gauche pour le nouveau pixel
+                valeur = (byte & mask)
+                byte = byte >> bpp
+                nb_bits -= bpp
+                
+                #print(mask-valeur, mul_val, (mask-valeur)*mul_val)
+                
+                c.pixels.append( (mask-valeur)*mul_val )
+                
+                nb_pix -= 1
+
             self.bdd.append(c)
         
         im_file.close()
-        vl_file.close()
         
         print(f"Lecture finie, {N} valeurs en mémoire")
         
@@ -289,10 +328,7 @@ class Interface():
                 
                 ## Si on a dessiné qq chose, lancer une recherche de voisin
                 if self.drawing.color != None:
-                    if self.thread:
-                        self.thread.stop()
-                    self.thread = VoisinThread( self )
-                    self.thread.start()
+                    self.drawn = True
 
             ## Deplacement de la souris
             if event.type == pygame.MOUSEMOTION:
@@ -301,10 +337,7 @@ class Interface():
                 
                 ## Si on a dessiné qq chose, lancer une recherche de voisin
                 if self.drawing.color != None:
-                    if self.thread:
-                        self.thread.stop()
-                    self.thread = VoisinThread( self )
-                    self.thread.start()
+                    self.drawn = True
         
             ## Relachement de la souris
             if event.type == pygame.MOUSEBUTTONUP:
@@ -317,27 +350,39 @@ class Interface():
         self.screen = pygame.display.set_mode( (_ZF*_W + 5 + _W , _ZF*_W) )
         self.screen.fill( GRIS )
         self.drawing = Drawing()
+        self.drawn = False
         
         self.do_loop = True
         self.color = None
         
         self.test = Chiffre()
+        self.test.pixels = self.drawing.clip(self)
 
         while self.do_loop:
-            ## Check
-            self.test.pixels = self.drawing.clip()
-        
-            ## Dessin
+            ## Dessin ####################################################
             self.drawing.draw(self.screen)
+        
+            ### Le dessin a été mis à jour ?
+            if self.drawn:
+                #### Maj de Chiffre test
+                self.test.pixels = self.drawing.clip(self)
+                #### Lancement de l'analyse
+                if self.thread:
+                        self.thread.stop()
+                self.thread = VoisinThread( self )
+                self.thread.start()
+                self.drawn = False
+            
+            ## Dessin du Chiffre testé (après clipping)
+            self.test.draw(self.screen, _ZF*_W + (_W+5-2*im_size)//2, im_size // 2 )
+            pygame.draw.rect(self.screen, (255,0,0), (_ZF*_W + (_W+5-2*im_size)//2 - 2, im_size // 2 -2, 2*im_size+4, 2*im_size+4 ), 2)
+
             pygame.display.flip()
     
             ## Events
             self.check_events()
             
-            ## Doit on chercher les voisins ?
-            #if self.drawing.color:
-            #    print("Yes")
-
+            ## Pause (50fps)
             self.clock.tick(20)
             
         ## On tue le thread éventuel
