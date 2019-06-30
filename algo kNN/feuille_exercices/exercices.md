@@ -58,3 +58,23 @@ def classe_1nn(liste_points,point):
 			...
     return ...
 ```
+
+## Exercice 4
+
+On chercher à mettre en place un système de recommandation sur un réseau social dédié aux séries télé.
+On dispose d'une base d'utilisateurs, et de leur avis sur les séries suivantes.
+(intégrer le tableau)
+
+Chaque utilisateur peut noter une série entre 1 (horrible) et 10 (excellent). On définit une distance
+entre deux utilisateurs en faisant le calcul suivant :
++ Pour chaque série on calcule la valeur absolue de la différence entre les notes des deux utilisateurs.
++ On fait la somme de toutes ces différences.
+
+Ainsi la différence entre Abel et Alicia se calcule ainsi.
++ Pour *La casa de Papel*, la différence vaut abs(10-5)=5. Pour *Big little lies*, la différence vaut
+abs(6-9)=3. Etc.
++ La distance entre Abel et Alicia vaut donc : Dist(Abel,Alicia)=5+2+5+2+0+1+3=18.
+
+1. Déterminer les 3 utilisateurs les plus proches d'Abel.
+
+2. Déterminer les 5 utilisateurs les plus proches d'Alicia.
