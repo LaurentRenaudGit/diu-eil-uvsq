@@ -1,6 +1,5 @@
 <!--
-    output=pdf
-    font-size=14
+    output=word
 -->
 
 # Algorithme des k plus proches voisins
@@ -18,13 +17,13 @@ Par exemple:
 Il existe de nombreux algorithmes pour faire cela.
 
 L'un d'eux s'appelle _Algorithme des k plus proches voisins_ 
-(_k **N**earest **N**eighbors_ en anglais ou _kNN_) où _k_ est un nombre entier 
+(_k-**N**earest **N**eighbors_ en anglais ou _kNN_) où _k_ est un nombre entier 
 strictement positif correspondant au nombre de voisins.
 
 ## 2. Principe du 1-NN
 
 On considère un ensemble de $n$ objets $E = \{ o_1, o_2, ..., o_n \}$ 
-dont on connait la _classe_ $c(o_1)$, $c(o_2)$, ... $c(o_n)$.
+dont on connaît la _classe_ $c(o_1)$, $c(o_2)$, ... $c(o_n)$.
 
 On dispose d'une méthode de mesure de distance entre deux objets : $d(o_i,o_j)$.
 
@@ -55,6 +54,10 @@ Fonction classe_1nn(o)
 ~~~
 
 
+Exemple : démonstration d’un algorithme 1-NN avec points et couleurs
+
+- Exercices n°1 question 1, n°2 et n°3 de la feuille d’exercices.
+
 \begin{tikzpicture}
     \draw (0,0) grid (10,10);
 
@@ -84,8 +87,6 @@ Fonction classe_1nn(o)
     \draw (9,8) circle (0.15)node[below right] {\large $K$} ;
 \end{tikzpicture}
 
-_Exercice: en vous aidant du fichier algo_1nn.py compléter l'algorithme et vérifier son fonctionnement_
-
 ## 3. Principe du k-NN
 
 Le contexte de travail est le même que pour l'algorithme 1-NN, mais on procède de la façon suivante :
@@ -104,7 +105,7 @@ Algorithme naïf : on suppose
 -   qu'il n'y a que deux classes d'objets _c1_ et _c2_
 
 ~~~
-Fonction classe_knn(o)
+Fonction k_voisins(o)
     Pour j allant 1 à k:
         ajouter o_j à voisins
     FinPour
@@ -119,6 +120,11 @@ Fonction classe_knn(o)
             dmax = distance_max(o, voisins)
         FinSi
     FinPour
+
+    Renvoyer voisins
+
+Fonction classe_knn(0)
+    voisins = k_voisins(o)
 
     effectif_c1 = 0
     effectif_c2 = 0
@@ -137,3 +143,5 @@ Fonction classe_knn(o)
         Renvoyer c2
     FinSi
 ~~~
+
++ Exercices n°1 questions 2 et 3, n°4 et n°5 de la feuille d’exercice
