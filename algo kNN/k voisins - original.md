@@ -1,5 +1,5 @@
 <!--
-    output=gfm
+    output=word
 -->
 
 # Algorithme des k plus proches voisins
@@ -41,28 +41,24 @@ Remarque : la recherche de l’objet le plus proche de \(o\) consiste à
 trouver le minimum dans une liste de nombres réels correspondant à la
 distance entre \(o\) et chacun des objet de l’ensemble \(E\).
 
-``` python
-Fonction classe_1nn(o)
+    Fonction classe_1nn(o)
+        
+        distance_min = Infini
+        voisin = Nul
     
-    distance_min = Infini
-    voisin = Nul
-
-    Pour j allant 1 à n:
-        distance = d(o,o_j)
-        Si distance < distance_min Alors
-            distance_min = distance
-            voisin = o_j
-        FinSi
-    FinPour
-
-    Renvoyer c(voisin)
-```
+        Pour j allant 1 à n:
+            distance = d(o,o_j)
+            Si distance < distance_min Alors
+                distance_min = distance
+                voisin = o_j
+            FinSi
+        FinPour
+    
+        Renvoyer c(voisin)
 
 Exemple : démonstration d’un algorithme 1-NN avec points et couleurs
 
   - Exercices n°1 question 1, n°2 et n°3 de la feuille d’exercices.
-
-![Image](tikz/e820e038e5a9d21da733edb690a6ef13a2d088ed.png) 
 
 ## 3\. Principe du k-NN
 
@@ -86,44 +82,42 @@ Algorithme naïf : on suppose
 
 <!-- end list -->
 
-``` python
-Fonction k_voisins(o)
-    Pour j allant 1 à k:
-        ajouter o_j à voisins
-    FinPour
-
-    dmax = distance_max(o, voisins)
-
-    Pour j allant k+1 à n:
-        distance = d(o,o_j)
-        Si distance < dmax Alors
-            Enlever le voisin le plus éloigné de o
-            Ajouter o_j à voisins
-            dmax = distance_max(o, voisins)
-        FinSi
-    FinPour
-
-    Renvoyer voisins
-
-Fonction classe_knn(0)
-    voisins = k_voisins(o)
-
-    effectif_c1 = 0
-    effectif_c2 = 0
-
-    Pour objet dans voisins:
-        Si c(objet) = c1
-            Augmenter effectif_c1
+    Fonction k_voisins(o)
+        Pour j allant 1 à k:
+            ajouter o_j à voisins
+        FinPour
+    
+        dmax = distance_max(o, voisins)
+    
+        Pour j allant k+1 à n:
+            distance = d(o,o_j)
+            Si distance < dmax Alors
+                Enlever le voisin le plus éloigné de o
+                Ajouter o_j à voisins
+                dmax = distance_max(o, voisins)
+            FinSi
+        FinPour
+    
+        Renvoyer voisins
+    
+    Fonction classe_knn(0)
+        voisins = k_voisins(o)
+    
+        effectif_c1 = 0
+        effectif_c2 = 0
+    
+        Pour objet dans voisins:
+            Si c(objet) = c1
+                Augmenter effectif_c1
+            Sinon
+                Augmenter effectif_c2
+            FinSi
+        FinPour
+    
+        Si effectif_c1 > effectif_c2
+            Renvoyer c1
         Sinon
-            Augmenter effectif_c2
+            Renvoyer c2
         FinSi
-    FinPour
-
-    Si effectif_c1 > effectif_c2
-        Renvoyer c1
-    Sinon
-        Renvoyer c2
-    FinSi
-```
 
   - Exercices n°1 questions 2 et 3, n°4 et n°5 de la feuille d’exercice
