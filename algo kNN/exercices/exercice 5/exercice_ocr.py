@@ -11,40 +11,32 @@ def distance(A, B):
       Si un pixel de A contient 12 et celui de B contient 20, l'écart est 8.
       Si un pixel de A contient 12 et celui de B contient 4,  l'écart est *aussi* 8.
     """
+    # La taille des deux tableaux
+    nb_pixels = len(A)
+
+    # De base, la distance est supposée nulle
     d = 0
-    for i in range( len(A) ):
-        d += abs( A[i] - B[i] )
-    
+
+    # On passe en revue chaque pixel
+    for i in range(nb_pixels):
+        # Comparer le pixel A[i] et le pixel B[i]
+        d = d + 1
+
+    # On renvoie la distance calculée
     return d
 
 def valeur( voisins ):
     """Cette fonction recoit un tableau de valeurs
     Elle doit renvoyer la valeur majoritaire."""
-    
-    compte = [ [c,0] for c in range(10) ]
-    total = 0
 
     for v in voisins:
-        compte[v][1] += 1
-        total += 1
-    
-    compte.sort( key = lambda x: -x[1] )
-    
-    print("Compte rendu de la recherche\n" + "-"*20)
-    
-    for c in compte:
-        chiffre, effectif = c
-        if effectif != 0:
-            print(f"{ chiffre } ({(effectif/total*100):.2f}%)")
-    
-    print("-"*20 + "\n")
-    
-    return compte[0][0]
+        print("Un des voisins vaut", v)
+
+    return 0
 
 ## On lance l'interface en lui passant en paramètres
-#      - le fichier contenant des images de chiffres connus
 #      - la fonction distance ci-dessus (pour l'algo de recherche des k-voisins)
 #      - la fonction valeur ci-dessus (pour déterminer la valeur choisie par kNN)
 #      - la valeur de k à utiliser
-application = Interface("images-cropped_16px_2bpp.raw", distance, valeur, k=7)
+application = Interface(distance, valeur, k=7)
 application.run()

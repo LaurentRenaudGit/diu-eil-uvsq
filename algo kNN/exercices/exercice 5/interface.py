@@ -240,7 +240,7 @@ class VoisinThread(threading.Thread):
 
   
 class Interface():
-    def __init__(self, images, f_distance, f_valeur, k=1, N=10000):
+    def __init__(self, f_distance, f_valeur, k=1, N=10000, images="images-cropped_16px_2bpp.raw"):
         global im_size
     
         assert k<=15, "k doit valoir au maximum 15"

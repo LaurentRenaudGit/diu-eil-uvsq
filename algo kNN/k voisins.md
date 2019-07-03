@@ -1,7 +1,3 @@
-<!--
-    output=gfm
--->
-
 # Algorithme des k plus proches voisins
 
 ## 1\. Introduction
@@ -58,11 +54,22 @@ Fonction classe_1nn(o)
     Renvoyer c(voisin)
 ```
 
-Exemple : démonstration d’un algorithme 1-NN avec points et couleurs
+*Exemple :* Dans la figure ci-dessous, on connait la classe de 6 points
+(les cercles pleins bleus et les croix rouges)
 
-  - Exercices n°1 question 1, n°2 et n°3 de la feuille d’exercices.
+On souhaite classer les points \((4,3)\) et \((1.5,2.8)\)
 
-![Image](tikz/e820e038e5a9d21da733edb690a6ef13a2d088ed.png) 
+![Image](tikz/a8cb03bd44cad37e5d3f79e93f224bae5c08d56e.png) 
+
+Pour les deux points à classer, on cherche parmi les points connus celui
+qui est le plus proche (= 1 voisin)
+
+![Image](tikz/b7ac012b90ae675a2fba53e20e7b46e07069f71c.png) 
+
+  - \((4,3)\) doit être classé “cercle bleu”
+  - \((1.5,2.8)\) doit être classé “croix rouge”
+
+Exercices n°1 question 1, n°2 et n°3 de la feuille d’exercices.
 
 ## 3\. Principe du k-NN
 
@@ -107,7 +114,6 @@ Fonction k_voisins(o)
 
 Fonction classe_knn(0)
     voisins = k_voisins(o)
-
     effectif_c1 = 0
     effectif_c2 = 0
 
@@ -126,4 +132,4 @@ Fonction classe_knn(0)
     FinSi
 ```
 
-  - Exercices n°1 questions 2 et 3, n°4 et n°5 de la feuille d’exercice
+Exercices n°1 questions 2 et 3, n°4 et n°5 de la feuille d’exercice

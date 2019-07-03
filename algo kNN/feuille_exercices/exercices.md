@@ -139,7 +139,7 @@ L’algorithme n’est cependant pas complet :
 La partie *rechercher les plus proches voisins* est en revanche déjà
 écrite (mais dépend de la fonction *distance*)
 
-Ouvrir le fichier `exercice_ocr.py`
+Ouvrir le fichier `exercice 5/exercice_ocr.py`
 
 1.  **La distance**
     
@@ -153,7 +153,7 @@ Ouvrir le fichier `exercice_ocr.py`
     
     ``` python
         def distance(A, B):
-            """A et B sont deux tableaux contenant la valeur des pixels"""
+            """A et B sont deux tableaux de même taille"""
     
             # La taille des deux tableaux
             nb_pixels = len(A)
@@ -177,15 +177,81 @@ Ouvrir le fichier `exercice_ocr.py`
 
 2.  **Le vote**
     
-    *TBD*
+    Une fois les *k* voisins trouvés, on obtient un tableau contenant la
+    classe (ici = le chiffre) de chaque voisins.
+    
+    *Par exemple, si les on fait *k=5* et que les voisins obtenus
+    représentent les chiffres 3, 8, 3, 3 et 9, on obtient le tableau
+    `[3, 8 ,3, 3, 9]`*
+    
+    La fonction valeur doit lire le contenu de ce tableau et renvoyer la
+    valeur majoritaire.
+    
+    *Dans l’exemple ci dessus, elle devrait renvoyer 3.*
+    
+    ``` python
+        def valeur( voisins ):
+            """Cette fonction recoit un tableau de valeurs
+            Elle doit renvoyer la valeur majoritaire."""
+    
+            for v in voisins:
+                print("Un des voisins vaut", v)
+    
+            return 0
+    ```
+    
+    Modifier la fonction pour qu’elle fasse le travail attendu.
 
 ## Exercice 6 - Limites de l’approche *kNN*
 
-1.  Décrire la distance de Levenshtein, faire fonctionner avec
-    l’approche “correction orthographique”
+Dans cet exercice, les objets que nous allons classer sont des mots,
+pour pouvoir faire fonctionner l’algorithme k-NN, il faut donc pouvoir
+calculer une “distance” entre 2 mots.
 
-2.  Faire fonctionner kNN pour l’identification de langue, faire
-    commenter
+Définir une telle distance n’est pas évident…
+
+1.  **Distance de Damerau-Levenshtein**
+    
+    Une distance envisageable est de compter combien d’opérations
+    (ajouter une lettre, enlever une lettre, remplacer une lettre ou
+    échanger deux lettres côte à côte) permette de passer d’un mot à un
+    autre.
+    
+    (Rq: les étapes intermédiaires n’ont pas besoin d’être de vrais
+    mots\!)
+    
+    Par exemple :
+    
+      - pour passer de **super** à **soupe** il faut 2 opérations:
+        
+        super =\> s**o**uper =\> soupe  
+        (on ajoute un *o* et on enlève un *r*)
+        
+        donc la distance entre *super* et *soupe* est 2.
+    
+      - pour passer de **aigle** à **fiable** il faut 3 opérations:
+        
+        aigle =\> **f**aigle =\> f**ia**gle =\> fia**b**le  
+        (on ajoute *f*, on échange *a* et *i*, et on remplace *g* par
+        *b*)
+        
+        donc la distance entre *aigle* et *fiable* est 3.
+    
+    Calculer la distance entre
+    
+      - *facile* et *bailler*
+      - *ordinateur* et *odrinatur*
+
+2.  Muni de cette distance et de deux listes de mots : une de mots
+    *français* et une de mots *anglais*, on a écrit l’algorithme k-NN
+    pour décider si un mot tapé est français ou anglais.
+    
+    Ouvrir le programme *exercice 6/french\_or\_english.py*.
+    
+    Le faire fonctionner avec différents mots (français, anglais, avec
+    des fautes, etc…)
+    
+    Commenter…
 
 <!-- end list -->
 

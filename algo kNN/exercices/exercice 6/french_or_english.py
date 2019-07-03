@@ -29,11 +29,9 @@ def levenshtein(chaine1, chaine2, effacement = 1, insertion = 1, substitution = 
 
     return d[l1][l2]
 
-f = open("liste_francais_propre.txt")
+f = open("francais.txt")
 liste = f.read().split("\n")
 f.close()
-
-# liste=liste[:5000]
 
 print("On a %d mots français en stock" % len(liste))
 print("Allant de %s à %s\n" % (liste[0], liste[-1]) )
@@ -45,9 +43,9 @@ f.close()
 print("On a %d mots anglais en stock" % len(liste2))
 print("Allant de %s à %s\n" % (liste2[0], liste2[-1]) )
 
-mot_test = input("Quel mot voulez-vous tester ?")
+mot_test = input("Quel mot voulez-vous tester ? ")
 
-k = int(input("Valeur de k de l'algorithme k-NN ?"))
+k = int(input("Valeur de k de l'algorithme k-NN ? "))
 
 r = []
 
