@@ -132,4 +132,5 @@ Fonction classe_knn(0)
     FinSi
 ```
 
-Exercices n°1 questions 2 et 3, n°4 et n°5 de la feuille d’exercice
+Exercices n°1 questions 2 et 3, n°4, n°5 et n°6 de la feuille
+d’exercices.

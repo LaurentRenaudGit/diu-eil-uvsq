@@ -118,7 +118,7 @@ des chiffres.
 Dans cet exercice, on dispose
 
   - d’une base de données de 10000 images représentant des chiffres
-    identifiée.
+    identifiés.
     
     La classe de chaque image est le chiffre (\(0, 1, 2, ... , 9\))
     qu’elle représente.
@@ -164,7 +164,7 @@ Ouvrir le fichier `exercice 5/exercice_ocr.py`
             # On passe en revue chaque pixel
             for i in range(nb_pixels):
                 # Comparer le pixel A[i] et le pixel B[i]
-                d = d + 1
+                ...
     
             # On renvoie la distance calculée
             return d
@@ -173,7 +173,7 @@ Ouvrir le fichier `exercice 5/exercice_ocr.py`
     Corriger la fonction pour qu’elle fasse le travail attendu.
     
     Lorsqu’elle sera correctement écrite, les images sélectionnées
-    *devraient* ressembler au chiffre que vous dessinez\[1\]
+    *devraient* ressembler au chiffre que vous dessinez.\[1\]
 
 2.  **Le vote**
     
@@ -214,8 +214,8 @@ Définir une telle distance n’est pas évident…
     
     Une distance envisageable est de compter combien d’opérations
     (ajouter une lettre, enlever une lettre, remplacer une lettre ou
-    échanger deux lettres côte à côte) permette de passer d’un mot à un
-    autre.
+    échanger deux lettres côte à côte) permettent de passer d’un mot à
+    un autre.
     
     (Rq: les étapes intermédiaires n’ont pas besoin d’être de vrais
     mots\!)
@@ -248,7 +248,7 @@ Définir une telle distance n’est pas évident…
     
     Ouvrir le programme *exercice 6/french\_or\_english.py*.
     
-    Le faire fonctionner avec différents mots (français, anglais, avec
+    Le faire fonctionner avec différents mots. (français, anglais, avec
     des fautes, etc…)
     
     Commenter…

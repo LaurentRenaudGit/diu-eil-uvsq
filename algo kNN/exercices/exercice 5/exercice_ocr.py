@@ -20,7 +20,7 @@ def distance(A, B):
     # On passe en revue chaque pixel
     for i in range(nb_pixels):
         # Comparer le pixel A[i] et le pixel B[i]
-        d = d + 1
+        ...
 
     # On renvoie la distance calculée
     return d
